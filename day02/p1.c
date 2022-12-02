@@ -44,9 +44,7 @@ int main(void) {
   char opp;
   char me;
   int score = 0;
-  int count = 0;
   while (fgets(lineBuffer, 5, stdin)) {
-    count += 1;
     opp = lineBuffer[0];
     me = lineBuffer[2];
     score += (choice_score(me) + match_score(opp, me));

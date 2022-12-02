@@ -33,9 +33,7 @@ int main(void) {
   char opp;
   char outcome;
   int score = 0;
-  int count = 0;
   while (fgets(lineBuffer, 5, stdin)) {
-    count += 1;
     opp = lineBuffer[0];
     outcome = lineBuffer[2];
     score += (get_play(opp, outcome) + match_score(outcome));
