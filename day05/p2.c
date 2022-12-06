@@ -5,24 +5,10 @@
 #include <ctype.h>
 
 #define STACKS 9
-#define CRATES 40
+#define CRATES 50
 #define NMOVES 520
 
-void print_crates(char boxes[STACKS][CRATES]){
-  for (int i=0; i< CRATES; i++){
-    for (int j=0; j< STACKS; j++){
-      if (isalpha(boxes[j][i])){
-        printf("[%c] ", boxes[j][i]);
-      }
-      else {
-        printf("    ");
-      }
-    }
-    printf("\n");
-  }
-}
-
-bool read_line(char* buffer, char crates[STACKS][CRATES]) {
+bool read_line(char* buffer, char crates[STACKS][CRATES], int current_line) {
   int count = 0;
   char c;
   for (int i=0;i<50;i++){
@@ -96,36 +82,58 @@ void get_move(char* buffer, int moves[NMOVES][3], int current_line) {
   }
 }
 
-void move_box(char boxes[STACKS][CRATES], int from, int to) {
-  char replace = boxes[from][CRATES-1];
-  char tmp;
-  for (int i=CRATES-1; i>=0; i--){
-    if (! isalpha(boxes[from][i])){
-      break;
+void print_crates(char boxes[STACKS][CRATES]){
+  for (int i=0; i< CRATES; i++){
+    for (int j=0; j< STACKS; j++){
+      if (isalpha(boxes[j][i])){
+        printf("[%c] ", boxes[j][i]);
+      }
+      else {
+        printf("    ");
+      }
     }
-    boxes[from][i] = boxes[from][i-1];
+    printf("\n");
   }
+}
 
-  for (int i=CRATES-1; i>=0; i--) {
-    if (! isalpha(boxes[to][i])){
-      boxes[to][i] = replace;
+void move_box(char boxes[STACKS][CRATES], int from, int to, int move_n) {
+  char replace[CRATES]="";
+  char tmp;
+  int count=0;
+  for (int i=CRATES-1; i>=0; i--){
+    if (!isalpha(boxes[from][i])){
       break;
     }
-    tmp = boxes[to][i];
-    boxes[to][i] = replace;
-    replace = tmp;
+    if (count!=move_n){
+      replace[count] = boxes[from][i];
+      count++;
+    }
+    boxes[from][i] = boxes[from][i-move_n];
   }
+  count=0;
+  for (int i=CRATES-1; i>=0; i--) {
+    tmp = boxes[to][i];
+    boxes[to][i] = replace[count];
+    replace[count]=tmp;
+    if (count<move_n-1){
+      count++;
+    }
+    else {
+      count=0;
+    }
+  }
+//  print_crates(boxes);
 }
 
 void main(void) {
   char crates[STACKS][CRATES] ={""};
-  char lineBuffer[40];
+  char lineBuffer[50];
   int moves[NMOVES][3] = {0};
   bool end_of_state=false;
   int line_count = 0;
   int move_line_s;
 
-  while(fgets(lineBuffer, 40, stdin)) {
+  while(fgets(lineBuffer, 50, stdin)) {
     line_count += 1;
     if (end_of_state) {
       if (line_count < move_line_s){
@@ -134,20 +142,18 @@ void main(void) {
       get_move(lineBuffer, moves, line_count-move_line_s);
     }
     else {
-      end_of_state = read_line(lineBuffer, crates);
+      end_of_state = read_line(lineBuffer, crates, line_count);
       move_line_s = line_count + 2;
     }
   }
+
   print_crates(crates);
   for (int i=0; i<NMOVES; i++){
     if (moves[i][0] == 0){
       break;
     }
-    for (int j=0; j<moves[i][0];j++){
-      move_box(crates, moves[i][1], moves[i][2]);
-    }
+    move_box(crates, moves[i][1], moves[i][2], moves[i][0]);
   }
-  print_crates(crates);
   char concat[STACKS+1];
   int str_cnt = 0;
   for (int i=0; i<STACKS; i++){
