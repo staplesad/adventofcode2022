@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define STACKS 9
-#define CRATES 40
+#define CRATES 50
 #define NMOVES 520
 
 void print_crates(char boxes[STACKS][CRATES]){
