@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=
 
-TEST_FILE=p2
+TEST_FILE=p1
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
