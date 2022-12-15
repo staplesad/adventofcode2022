@@ -76,6 +76,9 @@ int main(void){
   int skip_y;
   int m_dist;
 
+  //skip sensors once we're past range?
+  //would have to sort sensors/beacons first
+  int c_start=0;
   for (int j=0; j<end_max+1; j++){
     tmp_pos[1] = j;
     if(j%1000==0){
@@ -83,7 +86,7 @@ int main(void){
     }
     for (int i=0; i<end_max+1; i++){
       tmp_pos[0] = i;
-      for (c=0; c< count; c++){
+      for (c=c_start; c< count; c++){
         m_dist = manhatten_dist(sensors[c], tmp_pos);
         if(m_dist <= min_range[c]){
 //          printf("i, j: %d, %d\n", i, j);
