@@ -1,4 +1,6 @@
 #include <stdbool.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,7 +30,7 @@ void draw_sensors(int sensors[S_LEN][2], int min_range[S_LEN], int count){
       matrix[j][i]='0';
       for (int c=0;c<count;c++){
         if (manhatten_dist(sensors[c], tmp)<=min_range[c]){
-          matrix[j][i]='#';
+          matrix[j][i]=c+48;
           break;
         }
       }
@@ -41,6 +43,22 @@ void draw_sensors(int sensors[S_LEN][2], int min_range[S_LEN], int count){
     printf("\n");
   }
   
+}
+
+bool outside_bounds(int point[2], int end_max){
+  if (point[0] <0 || point[0]> end_max+1||point[1]<0||point[1]>end_max+1){
+    return true;
+  }
+  return false;
+}
+
+bool invalid(int sensors[S_LEN][2], int min_range[S_LEN], int point[2], int count){
+  for (int k=0; k<count; k++){
+    if(manhatten_dist(sensors[k], point)<= min_range[k]){
+      return true;
+    }
+  }
+  return false;
 }
 
 int main(void){
@@ -65,50 +83,81 @@ int main(void){
   }
 
 
-  //reverse sensor lookup -> skip larger chunks of searchspace?
-  //
   int tmp_pos[2];
-  int c =0;
   int end_max=4000000;
   //int end_max=20;
-  int y_diff;
-  int x_diff;
-  int skip_y;
-  int m_dist;
 
-  //skip sensors once we're past range?
-  //would have to sort sensors/beacons first
-  int c_start=0;
-  for (int j=0; j<end_max+1; j++){
-    tmp_pos[1] = j;
-    if(j%1000==0){
-      printf("at j: %d\n", j);
-    }
-    for (int i=0; i<end_max+1; i++){
-      tmp_pos[0] = i;
-      for (c=c_start; c< count; c++){
-        m_dist = manhatten_dist(sensors[c], tmp_pos);
-        if(m_dist <= min_range[c]){
-//          printf("i, j: %d, %d\n", i, j);
-          y_diff  = abs(tmp_pos[1]-sensors[c][1]);
-          x_diff = sensors[c][0]-tmp_pos[0];
-          skip_y = m_dist + x_diff - y_diff;
-          i += skip_y;
-//          printf("min_range: %d\n", min_range[c]);
-//          printf("diffs: %d, %d\tskip_x: %d\tnew_i: %d\n", x_diff, y_diff, skip_y, i+1);
-          break;
-        }
-      }
-      if (c==count){
-        if (check_beacon(beacons, tmp_pos, count)){
-          continue;
-        };
-        printf("%d, %d, s: %d\n", tmp_pos[0], tmp_pos[1], c);
+
+  //instead of skipping each line can I find only the edges of all sensor points and search those?
+  for (int c=0; c< count; c++){
+  //one point above
+    //printf("%d, %d\n",  sensors[c][0], sensors[c][1]);
+    //printf("----\n");
+    tmp_pos[0] = sensors[c][0];
+    tmp_pos[1] = sensors[c][1]-min_range[c]-1;
+    //printf("%d, %d\n",  tmp_pos[0], tmp_pos[1]);
+    if(!invalid(sensors, min_range, tmp_pos, count)){
+      if (!outside_bounds(tmp_pos, end_max)){
         goto end;
       }
     }
+  //diagonals down the sides until y
+    tmp_pos[1]++;
+    tmp_pos[0]--;
+    int diag = 0;
+    while(tmp_pos[1]!=sensors[c][1]+1){
+      //printf("%d, %d\n",  tmp_pos[0], tmp_pos[1]);
+      diag++;
+      if(!invalid(sensors, min_range, tmp_pos, count)){
+        if (!outside_bounds(tmp_pos, end_max)){
+          goto end;
+        }
+      }
+      tmp_pos[0]++;
+      tmp_pos[0] += diag;
+      //printf("%d, %d\n",  tmp_pos[0], tmp_pos[1]);
+      if(!invalid(sensors, min_range,tmp_pos, count)){
+        if (!outside_bounds(tmp_pos, end_max)){
+          goto end;
+        }
+      }
+      tmp_pos[0] -= (1+diag);
+      tmp_pos[1]++;
+    }
+  //diagonals down the sides until y+range
+   while(tmp_pos[1]!=sensors[c][1]+min_range[c]+1){
+      diag--;
+      //printf("%d, %d\n",  tmp_pos[0], tmp_pos[1]);
+      if(!invalid(sensors, min_range, tmp_pos, count)){
+        if (!outside_bounds(tmp_pos, end_max)){
+          goto end;
+        }
+      }
+      tmp_pos[0]++;
+      tmp_pos[0] += diag;
+      //printf("%d, %d\n",  tmp_pos[0], tmp_pos[1]);
+      if(!invalid(sensors, min_range,tmp_pos, count)){
+        if (!outside_bounds(tmp_pos, end_max)){
+          goto end;
+        }
+      }
+      tmp_pos[0] -= (1+diag);
+      tmp_pos[1]++;
+   }
+  //one point below
+    tmp_pos[0] = sensors[c][0];
+    tmp_pos[1] = sensors[c][1]+min_range[c]+1;
+    //printf("%d, %d\n",  tmp_pos[0], tmp_pos[1]);
+    if(!invalid(sensors, min_range, tmp_pos, count)){
+      if (!outside_bounds(tmp_pos, end_max)){
+        goto end;
+      }
+    }
+    //printf("----\n");
+    //printf("----\n");
   }
-  end:
-    printf("%d\n", tmp_pos[0]*4000000+tmp_pos[1]);
+end:
+  printf("%d, %d\n", tmp_pos[0], tmp_pos[1]);
+  printf("%"PRId64"\n", (uint64_t)tmp_pos[0]*4000000+(uint64_t)tmp_pos[1]);
   //draw_sensors(sensors, min_range, count);
 }
