@@ -56,7 +56,7 @@ bool int_in_array(int *array, int limit, int search_val){
 }
 
 int is_neighbour(valve nodes[input_nodes], valve cur_node, int count, int check_index, int visited[input_nodes], int visited_count){
-  //could make this faster if I can tell is .dist_all has been set or not already
+  //could make this faster if I can tell if .dist_all has been set or not already
   //bfs would also be better than recursive
   printf("%s: checking for %d, visited count %d\n",  cur_node.name, check_index, visited_count);
   for (int i=0; i< cur_node.n_edges; i++){
@@ -85,10 +85,10 @@ int is_neighbour(valve nodes[input_nodes], valve cur_node, int count, int check_
 void set_distances(valve nodes[input_nodes], int count){
   for (int i=0; i<count; i++){
     //for each node set as source
-    //set self as zero
     printf("node %d is source\n", i);
     for (int j=0; j<count; j++){
       printf("finding dist to node %d\n", j);
+      //set self as zero
       if (j == i){
         nodes[i].dist_all[i]=0;
       }
@@ -151,11 +151,19 @@ int main(void){
   }
   set_distances(nodes, count);
   printf("max flow: %d\n", max_flow);
-  print_all_valves(nodes, count);
+  //print_all_valves(nodes, count);
 
   // how to choose steps?
   // get 'shortest' distance to each point in graph from first point
-  // minimum spanning tree?
+  // - need dist from every point
+  //
+  // - should i sort based on some combo of dist + flow
+  // - should I just try searching (dfs?)
+  // - can I find breakoff points e.g. if a path is already behind an already found path
+  // and it's got less pressure after a certain number of steps
+  // I should obviously cut it off?
+  //
+  // fully connected graph ---- can i break it down into sub problems?
   //
   //compute problem
   int current_flow = 0;
