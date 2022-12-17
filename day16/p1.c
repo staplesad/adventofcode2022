@@ -58,7 +58,7 @@ bool int_in_array(int *array, int limit, int search_val){
 int is_neighbour(valve nodes[input_nodes], valve cur_node, int count, int check_index, int visited[input_nodes], int visited_count){
   //could make this faster if I can tell is .dist_all has been set or not already
   //bfs would also be better than recursive
-  printf("%c%c: checking for %d, visited count %d\n", cur_node.name[0], cur_node.name[1], check_index, visited_count);
+  printf("%s: checking for %d, visited count %d\n",  cur_node.name, check_index, visited_count);
   for (int i=0; i< cur_node.n_edges; i++){
     if(cur_node.edges[i]==check_index){
       return 1;
@@ -72,7 +72,7 @@ int is_neighbour(valve nodes[input_nodes], valve cur_node, int count, int check_
       continue;
     }
     printf("visited count: %d\n", visited_count);
-    visited[visited_count] = i;
+    visited[visited_count] = cur_node.edges[i];
     rec_dist = is_neighbour(nodes, nodes[cur_node.edges[i]], count, check_index, visited, visited_count+1);
     if (rec_dist<min_dist){
       min_dist = rec_dist;
