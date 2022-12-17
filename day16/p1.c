@@ -5,13 +5,13 @@
 #include <sys/queue.h>
 
 #define T_LEN 10
-#define NAME_S 2
+#define NAME_S 3
 #define input_nodes 60
 
 typedef struct {
-  char name[2];
+  char name[3];
   int flow;
-  char edge_names[T_LEN][2];
+  char edge_names[T_LEN][3];
   int edges[T_LEN];
   int n_edges;
   int index;
@@ -19,14 +19,10 @@ typedef struct {
   bool on;
 } valve;
 
-valve create_valve(char name[2], int flow, char edge_names[T_LEN][2], int n_edges, int index){
-  int dist = -1;
-  if (index == 0){
-    dist =0;
-  }
+valve create_valve(char name[3], int flow, char edge_names[T_LEN][3], int n_edges, int index){
   valve new = {.name="", .flow=flow, .edge_names = {0}, .edges={-1}, .n_edges=n_edges, .index=index, .dist_all={-1}, .on=false};
-  strncpy(new.name, name, 2);
-  memcpy(new.edge_names, edge_names, sizeof(char)*2*T_LEN);
+  strncpy(new.name, name, 3);
+  memcpy(new.edge_names, edge_names, sizeof(char)*3*T_LEN);
   return new;
 }
 
@@ -112,24 +108,25 @@ int main(void){
   valve nodes[input_nodes];
   int real_line;
   int cur_flow;
-  char cur_name[2];
+  char cur_name[3];
   int count = 0;
 
   int max_flow = 0;
   while(true){
-    real_line = scanf("Valve %c%c has flow rate=%d; ", &cur_name[0], &cur_name[1], &cur_flow);
-    if (real_line !=3){
+    real_line = scanf("Valve %s has flow rate=%d; ", cur_name, &cur_flow);
+    if (real_line !=2){
       break;
     }
     if (cur_flow > max_flow){
       max_flow = cur_flow;
     }
     int edge_count = 0;
-    char cur_edges[T_LEN][2];
+    char cur_edges[T_LEN][3];
     char end_char;
-    scanf("tunnel%*c lead%*c to valves");
+    scanf("tunnel%*c lead%*c to valve%*c");
     while (true) {
       scanf(" %c%c%c", &cur_edges[edge_count][0], &cur_edges[edge_count][1], &end_char);
+      cur_edges[edge_count][2] = '\0';
       edge_count++;
       if(end_char=='\n'){
         break;
