@@ -159,6 +159,9 @@ int main(void){
   //
   // - should i sort based on some combo of dist + flow
   // - should I just try searching (dfs?)
+  // - n. poss combinatons is n_nodes! --> minus 0 nodes...
+  // 6! for test=set i.e. 720 combinations
+  // 15! for input i.e. 1.3e12
   // - can I find breakoff points e.g. if a path is already behind an already found path
   // and it's got less pressure after a certain number of steps
   // I should obviously cut it off?
