@@ -6,7 +6,8 @@
 
 #define T_LEN 10
 #define NAME_S 3
-#define input_nodes 60
+#define max_nodes 60
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 typedef struct {
   char name[3];
@@ -14,20 +15,19 @@ typedef struct {
   char edge_names[T_LEN][3];
   int edges[T_LEN];
   int n_edges;
-  int index;
-  int dist_all[input_nodes];
+  int dist_all[max_nodes];
   bool on;
 } valve;
 
-valve create_valve(char name[3], int flow, char edge_names[T_LEN][3], int n_edges, int index){
-  valve new = {.name="", .flow=flow, .edge_names = {0}, .edges={-1}, .n_edges=n_edges, .index=index, .dist_all={-1}, .on=false};
-  strncpy(new.name, name, 3);
-  memcpy(new.edge_names, edge_names, sizeof(char)*3*T_LEN);
-  return new;
-}
+typedef struct {
+  valve nodes[max_nodes];
+  int n_nodes;
+  int best;
+} graph;
+
 
 void print_valve(valve v, int count){
-  printf("(%d) %c%c: %d, [%d]\n", v.index, v.name[0], v.name[1], v.flow, v.n_edges);
+  printf("%c%c: %d, [%d]\n",  v.name[0], v.name[1], v.flow, v.n_edges);
   printf("children:\n");
   for (int i=0; i<v.n_edges; i++){
     printf("%d: %c%c,\t", v.edges[i], v.edge_names[i][0], v.edge_names[i][1]);
@@ -39,7 +39,7 @@ void print_valve(valve v, int count){
   printf("\n");
 }
 
-void print_all_valves(valve nodes[input_nodes], int count){
+void print_all_valves(valve nodes[max_nodes], int count){
   for (int i=0; i<count; i++){
     print_valve(nodes[i], count);
     printf("\n");
@@ -55,10 +55,10 @@ bool int_in_array(int *array, int limit, int search_val){
   return false;
 }
 
-int is_neighbour(valve nodes[input_nodes], valve cur_node, int count, int check_index, int visited[input_nodes], int visited_count){
+int is_neighbour(valve nodes[max_nodes], valve cur_node, int count, int check_index, int visited[max_nodes], int visited_count){
   //could make this faster if I can tell if .dist_all has been set or not already
   //bfs would also be better than recursive
-  printf("%s: checking for %d, visited count %d\n",  cur_node.name, check_index, visited_count);
+  //printf("%s: checking for %d, visited count %d\n",  cur_node.name, check_index, visited_count);
   for (int i=0; i< cur_node.n_edges; i++){
     if(cur_node.edges[i]==check_index){
       return 1;
@@ -68,90 +68,131 @@ int is_neighbour(valve nodes[input_nodes], valve cur_node, int count, int check_
   int rec_dist = count;
   for (int i=0; i<cur_node.n_edges; i++){
     if (int_in_array(visited, visited_count, cur_node.edges[i])){
-      printf("in visited\n");
+      //printf("in visited\n");
       continue;
     }
-    printf("visited count: %d\n", visited_count);
+    //printf("visited count: %d\n", visited_count);
     visited[visited_count] = cur_node.edges[i];
     rec_dist = is_neighbour(nodes, nodes[cur_node.edges[i]], count, check_index, visited, visited_count+1);
     if (rec_dist<min_dist){
       min_dist = rec_dist;
     }
-    printf("min_dist: %d, rec_dist: %d\n", min_dist, rec_dist);
+    //printf("min_dist: %d, rec_dist: %d\n", min_dist, rec_dist);
   }
   return min_dist+1;
 }
 
-void set_distances(valve nodes[input_nodes], int count){
+void set_distances(valve nodes[max_nodes], int count){
   for (int i=0; i<count; i++){
     //for each node set as source
-    printf("node %d is source\n", i);
+    //printf("node %d is source\n", i);
     for (int j=0; j<count; j++){
-      printf("finding dist to node %d\n", j);
+      //printf("finding dist to node %d\n", j);
       //set self as zero
       if (j == i){
         nodes[i].dist_all[i]=0;
       }
       else {
-        int visited[input_nodes] = {0};
+        int visited[max_nodes] = {0};
         visited[0] = i;
         int visited_count =1;
         nodes[i].dist_all[j] = is_neighbour(nodes, nodes[i], count, j, visited, visited_count);
       }
     }
-    printf("\n");
+    //printf("\n");
   }
-  printf("end of set distances\n");
+  //printf("end of set distances\n");
 }
 
-int main(void){
-  valve nodes[input_nodes];
+void read_input(graph * input){
   int real_line;
   int cur_flow;
   char cur_name[3];
-  int count = 0;
-
-  int max_flow = 0;
   while(true){
-    real_line = scanf("Valve %s has flow rate=%d; ", cur_name, &cur_flow);
+    real_line = scanf("Valve %s has flow rate=%d; ", input->nodes[input->n_nodes].name, &input->nodes[input->n_nodes].flow);
     if (real_line !=2){
       break;
     }
-    if (cur_flow > max_flow){
-      max_flow = cur_flow;
-    }
-    int edge_count = 0;
-    char cur_edges[T_LEN][3];
+    input->nodes[input->n_nodes].on = false;
     char end_char;
+    int edge_count=0;
     scanf("tunnel%*c lead%*c to valve%*c");
     while (true) {
-      scanf(" %c%c%c", &cur_edges[edge_count][0], &cur_edges[edge_count][1], &end_char);
-      cur_edges[edge_count][2] = '\0';
+      scanf(" %c%c%c", &input->nodes[input->n_nodes].edge_names[edge_count][0],&input->nodes[input->n_nodes].edge_names[edge_count][1], &end_char);
+      input->nodes[input->n_nodes].edge_names[edge_count][2] = '\0';
       edge_count++;
       if(end_char=='\n'){
         break;
       }
     }
-    valve new_node = create_valve(cur_name, cur_flow, cur_edges, edge_count, count);
-    nodes[count] = new_node;
-    count++;
+    input->nodes[input->n_nodes].n_edges = edge_count;
+    input->n_nodes++;
+  }
+}
+
+int solve(graph * input, int cur_idx, int steps_left, int acc, int potential){
+  static int total = 0;
+  total++;
+  if (steps_left <=1){
+    //printf("%d: %d, (%d)\n", total, acc, input->best);
+    if (acc > input->best){
+      input->best = acc;
+    }
+    return acc;
   }
 
+  if (potential*steps_left + acc < input->best){
+    return input->best;
+  }
+  int tmp_acc = acc;
+  if (input->nodes[cur_idx].flow!=0 && !input->nodes[cur_idx].on){
+    input->nodes[cur_idx].on=true;
+    for (int i=0; i<input->n_nodes; i++){
+      if (i==cur_idx || input->nodes[i].flow==0){
+        continue;
+      }
+      tmp_acc = MAX(tmp_acc, solve(input, i,  steps_left-1-input->nodes[cur_idx].dist_all[i],
+                  acc+input->nodes[cur_idx].flow * (steps_left-1),
+                  potential-input->nodes[cur_idx].flow));
+    }
+    input->nodes[cur_idx].on=false;
+  }
+  for (int i=0; i<input->n_nodes; i++){
+      if (i==cur_idx || input->nodes[i].flow==0){
+        continue;
+      }
+      tmp_acc = MAX(tmp_acc,
+                solve(input, i,  steps_left-input->nodes[cur_idx].dist_all[i],
+                  acc,
+                  potential));
+
+  }
+  return tmp_acc;
+}
+
+int main(void){
+  graph input;
+  read_input(&input);
   //construct edge lists
-  for (int i=0;i<count;i++){
-    for(int c=0; c<nodes[i].n_edges;c++){
-      for (int j=0; j<count; j++){
-        if (nodes[j].name[0]==nodes[i].edge_names[c][0]
-        && nodes[j].name[1]==nodes[i].edge_names[c][1]){
-          nodes[i].edges[c] = j;
+  for (int i=0;i<input.n_nodes;i++){
+    for(int c=0; c<input.nodes[i].n_edges;c++){
+      for (int j=0; j<input.n_nodes; j++){
+        if (input.nodes[j].name[0]==input.nodes[i].edge_names[c][0]
+        && input.nodes[j].name[1]==input.nodes[i].edge_names[c][1]){
+          input.nodes[i].edges[c] = j;
           break;
         }
       }
     }
   }
-  set_distances(nodes, count);
-  printf("max flow: %d\n", max_flow);
-  //print_all_valves(nodes, count);
+  set_distances(input.nodes, input.n_nodes);
+  print_all_valves(input.nodes, input.n_nodes);
+  int potential = 0;
+  for (int i=0; i<input.n_nodes; i++){
+    potential+=input.nodes[i].flow;
+  }
+  int res = solve(&input, 0, 30, 0, potential);
+  printf("%d\n", input.best);
 
   // how to choose steps?
   // get 'shortest' distance to each point in graph from first point
@@ -169,13 +210,12 @@ int main(void){
   // fully connected graph ---- can i break it down into sub problems?
   //
   //compute problem
-  int current_flow = 0;
-  int upcoming_flow = 0;
-  int countdown = 0;
-  int released_pressure = 0;
-  for( int i=0; i<30; i++){
-    // step through graph and add to upcoming flow (with countdown)
-    // |_> when turning on valve
-    // add current flow to released_pressure every step
-  }
+  // -----
+  // recursive solution
+  // **use distance to compute possible flows (only plot paths to >0 flow nodes)
+  // tree prune on potential flow + accumlated flow > best flow
+  // 
+  // step through graph and add to upcoming flow (with countdown)
+  // |_> when turning on valve
+  // add current flow to released_pressure every step
 }
