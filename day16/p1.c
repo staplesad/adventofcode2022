@@ -131,41 +131,27 @@ void read_input(graph * input){
 }
 
 int solve(graph * input, int cur_idx, int steps_left, int acc, int potential){
-  static int total = 0;
+  valve *node_p = &input->nodes[cur_idx];
+  valve node = *node_p;
+  static long long total = 0;
   total++;
   if (steps_left <=1){
-    //printf("%d: %d, (%d)\n", total, acc, input->best);
     if (acc > input->best){
+      printf("%lld: %d, (%d)\n", total, acc, input->best);
       input->best = acc;
     }
     return acc;
   }
 
-  if (potential*steps_left + acc < input->best){
-    return input->best;
-  }
   int tmp_acc = acc;
   if (input->nodes[cur_idx].flow!=0 && !input->nodes[cur_idx].on){
     input->nodes[cur_idx].on=true;
     for (int i=0; i<input->n_nodes; i++){
-      if (i==cur_idx || input->nodes[i].flow==0){
-        continue;
-      }
       tmp_acc = MAX(tmp_acc, solve(input, i,  steps_left-1-input->nodes[cur_idx].dist_all[i],
                   acc+input->nodes[cur_idx].flow * (steps_left-1),
                   potential-input->nodes[cur_idx].flow));
     }
     input->nodes[cur_idx].on=false;
-  }
-  for (int i=0; i<input->n_nodes; i++){
-      if (i==cur_idx || input->nodes[i].flow==0){
-        continue;
-      }
-      tmp_acc = MAX(tmp_acc,
-                solve(input, i,  steps_left-input->nodes[cur_idx].dist_all[i],
-                  acc,
-                  potential));
-
   }
   return tmp_acc;
 }
@@ -191,7 +177,9 @@ int main(void){
   for (int i=0; i<input.n_nodes; i++){
     potential+=input.nodes[i].flow;
   }
-  int res = solve(&input, 0, 30, 0, potential);
+  for (int i=0; i< input.nodes[0].n_edges; i++){
+    solve(&input, input.nodes[0].edges[i], 29, 0, potential);
+  }
   printf("%d\n", input.best);
 
   // how to choose steps?
