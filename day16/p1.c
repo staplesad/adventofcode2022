@@ -131,32 +131,32 @@ void read_input(graph * input){
 }
 
 int solve(graph * input, int cur_idx, int steps_left, int acc, int potential){
-  valve *node_p = &input->nodes[cur_idx];
-  valve node = *node_p;
+  valve node = input->nodes[cur_idx];
   static long long total = 0;
   total++;
-  if (steps_left <=1){
-    if (acc > input->best){
-      printf("%lld: %d, (%d)\n", total, acc, input->best);
-      input->best = acc;
-    }
+  if (acc > input->best){
+    printf("%lld: %d, (%d)\n", total, acc, input->best);
+    input->best = acc;
+  }
+  if (node.on || node.flow==0 || steps_left <= 1){
     return acc;
   }
-
   int tmp_acc = acc;
-  if (input->nodes[cur_idx].flow!=0 && !input->nodes[cur_idx].on){
-    input->nodes[cur_idx].on=true;
-    for (int i=0; i<input->n_nodes; i++){
-      tmp_acc = MAX(tmp_acc, solve(input, i,  steps_left-1-input->nodes[cur_idx].dist_all[i],
-                  acc+input->nodes[cur_idx].flow * (steps_left-1),
-                  potential-input->nodes[cur_idx].flow));
-    }
-    input->nodes[cur_idx].on=false;
+  input->nodes[cur_idx].on=true;
+  for (int i=0; i<input->n_nodes; i++){
+    tmp_acc = MAX(tmp_acc,
+                  solve(input,
+                        i,
+                        steps_left-1-node.dist_all[i],
+                        acc+node.flow * (steps_left-1),
+                        potential-node.flow));
   }
+  input->nodes[cur_idx].on=false;
   return tmp_acc;
 }
 
 int main(void){
+  freopen("input.txt", "r", stdin);
   graph input;
   read_input(&input);
   //construct edge lists
@@ -172,38 +172,20 @@ int main(void){
     }
   }
   set_distances(input.nodes, input.n_nodes);
+  int start = 0;
+  for (start; start<input.n_nodes; start++){
+    if(strcmp(input.nodes[start].name, "AA")==0){
+      break;
+    }
+  }
+  printf("AA @ %d\n", start);
   print_all_valves(input.nodes, input.n_nodes);
   int potential = 0;
   for (int i=0; i<input.n_nodes; i++){
     potential+=input.nodes[i].flow;
   }
-  for (int i=0; i< input.nodes[0].n_edges; i++){
-    solve(&input, input.nodes[0].edges[i], 29, 0, potential);
+  for (int i=0; i < input.n_nodes; i++){
+    solve(&input, i, 30-input.nodes[start].dist_all[i], 0, potential);
   }
   printf("%d\n", input.best);
-
-  // how to choose steps?
-  // get 'shortest' distance to each point in graph from first point
-  // - need dist from every point
-  //
-  // - should i sort based on some combo of dist + flow
-  // - should I just try searching (dfs?)
-  // - n. poss combinatons is n_nodes! --> minus 0 nodes...
-  // 6! for test=set i.e. 720 combinations
-  // 15! for input i.e. 1.3e12
-  // - can I find breakoff points e.g. if a path is already behind an already found path
-  // and it's got less pressure after a certain number of steps
-  // I should obviously cut it off?
-  //
-  // fully connected graph ---- can i break it down into sub problems?
-  //
-  //compute problem
-  // -----
-  // recursive solution
-  // **use distance to compute possible flows (only plot paths to >0 flow nodes)
-  // tree prune on potential flow + accumlated flow > best flow
-  // 
-  // step through graph and add to upcoming flow (with countdown)
-  // |_> when turning on valve
-  // add current flow to released_pressure every step
 }
