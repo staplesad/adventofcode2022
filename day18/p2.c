@@ -18,27 +18,6 @@ typedef struct {
   int n_items;
 } grid;
 
-void read_input(grid *input){
-  char buffer[BUF_LEN];
-  input->n_items=0;
-  while (fgets(buffer, BUF_LEN, stdin)){
-    sscanf(buffer, "%d,%d,%d",
-           &input->items[input->n_items].x,
-           &input->items[input->n_items].y,
-           &input->items[input->n_items].z);
-    if (input->items[input->n_items].x > input->max_vals.x){
-      input->max_vals.x = input->items[input->n_items].x;
-    }
-    if (input->items[input->n_items].y > input->max_vals.y){
-      input->max_vals.y = input->items[input->n_items].y;
-    }
-    if (input->items[input->n_items].z > input->max_vals.z){
-      input->max_vals.z = input->items[input->n_items].z;
-    }
-   input->n_items++;
-  }
-}
-
 void print_items(grid *input){
   for (int i=0;i<input->n_items; i++){
     printf("%d, %d, %d\n", input->items[i].x, input->items[i].y, input->items[i].z);
@@ -46,6 +25,25 @@ void print_items(grid *input){
   printf("Maxes:\n");
   printf("%d, %d, %d\n", input->max_vals.x, input->max_vals.y, input->max_vals.z);
 }
+
+void read_input(grid *input){
+  char buffer[BUF_LEN];
+  input->n_items=0;
+  input->max_vals.x = 0;
+  input->max_vals.y = 0;
+  input->max_vals.z = 0;
+  while (fgets(buffer, BUF_LEN, stdin)){
+    sscanf(buffer, "%d,%d,%d",
+           &input->items[input->n_items].x,
+           &input->items[input->n_items].y,
+           &input->items[input->n_items].z);
+    input->max_vals.x = MAX(input->max_vals.x, input->items[input->n_items].x);
+    input->max_vals.y = MAX(input->max_vals.y, input->items[input->n_items].y);
+    input->max_vals.z = MAX(input->max_vals.z, input->items[input->n_items].z);
+    input->n_items++;
+  }
+}
+
 
 enum Side {
   X = 1,
@@ -203,85 +201,68 @@ int has_direct_neighbour(bool full_grid[][MAX_AXIS][MAX_AXIS], cube current, cub
   return n_neighbours;
 }
 
-bool is_in_pocket(bool full_grid[][MAX_AXIS][MAX_AXIS], cube current, cube max_vals){
-  //follow all 6 directions and check if I encounter the edge or another cube;
-  //TODO flood fill b/c path out might not be straight 
-  int m;
-  bool reached_edge=true;
-  for (m = current.x; m>=0; m--){
-    if (full_grid[current.z][current.y][m]){
-      reached_edge=false;
-      break;
-    }
-  }
-  if (reached_edge){
+bool is_in_pocket(bool full_grid[][MAX_AXIS][MAX_AXIS], bool visited[MAX_AXIS][MAX_AXIS][MAX_AXIS], cube current, cube max_vals){
+  //TODO flood fill b/c path out might not be straight
+  if (current.x==max_vals.x+1 || current.y==max_vals.y+1|| current.z==max_vals.z+1){
     return false;
-  }
-  //
-  reached_edge=true;
-  for (m = current.x; m<=max_vals.x; m++){
-    if (full_grid[current.z][current.y][m]){
-      reached_edge=false;
-      break;
-    }
-  }
-  if (reached_edge){
+  };
+  if (current.x==-1 || current.y==-1|| current.z==-1){
     return false;
+  };
+  if (visited[current.z][current.y][current.x]){
+    return true;
   }
-  // y axis
-  reached_edge=true;
-  for (m = current.y; m>=0; m--){
-    if (full_grid[current.z][m][current.x]){
-      reached_edge=false;
-      break;
-    }
+  else {
+    visited[current.z][current.y][current.x] =1;
   }
-  if (reached_edge){
-    return false;
+  if (full_grid[current.z][current.y][current.x]){
+    return true;
+  };
+  bool return_val = true;
+  cube new_cube = {current.x+1, current.y, current.z};
+  return_val &= is_in_pocket(full_grid, visited, new_cube, max_vals);
+  if (!return_val){
+    return return_val;
   }
-  //
-  reached_edge=true;
-  for (m = current.y; m<=max_vals.y; m++){
-    if (full_grid[current.z][m][current.x]){
-      reached_edge=false;
-      break;
-    }
+  new_cube.x = current.x-1;
+  return_val &= is_in_pocket(full_grid, visited, new_cube, max_vals);
+  if (!return_val){
+    return return_val;
   }
-  if (reached_edge){
-    return false;
+  new_cube.x = current.x;
+  new_cube.y = current.y+1;
+  return_val &= is_in_pocket(full_grid, visited, new_cube, max_vals);
+  if (!return_val){
+    return return_val;
   }
-  // z axis
-  reached_edge=true;
-  for (m = current.z; m>=0; m--){
-    if (full_grid[m][current.y][current.x]){
-      reached_edge=false;
-      break;
-    }
+  new_cube.y = current.y-1;
+  return_val &= is_in_pocket(full_grid, visited, new_cube, max_vals);
+  if (!return_val){
+    return return_val;
   }
-  if (reached_edge){
-    return false;
+  new_cube.y = current.y;
+  new_cube.z = current.z+1;
+  return_val &= is_in_pocket(full_grid, visited, new_cube, max_vals);
+  if (!return_val){
+    return return_val;
   }
-  //
-  reached_edge=true;
-  for (m = current.z; m<=max_vals.z; m++){
-    if (full_grid[m][current.y][current.x]){
-      reached_edge=false;
-      break;
-    }
+  new_cube.z = current.z-1;
+  return_val &= is_in_pocket(full_grid, visited, new_cube, max_vals);
+  if (!return_val){
+    return return_val;
   }
-  if (reached_edge){
-    return false;
-  }
-  return true;
+  return return_val;
 }
 
 int solve(grid *input){
   int running_sum=0;
   bool full[MAX_AXIS][MAX_AXIS][MAX_AXIS];
+  bool visited[MAX_AXIS][MAX_AXIS][MAX_AXIS];
   for (int k=0;k<input->max_vals.z+1;k++){
     for (int j=0;j<input->max_vals.y+1;j++){
       for (int i=0;i<input->max_vals.x+1;i++){
         full[k][j][i] = 0;
+        visited[k][j][i] = 0;
       }
     }
   }
@@ -298,10 +279,17 @@ int solve(grid *input){
         if(!full[k][j][i]){
           cube empty = {i, j, k};
           //printf("%d, %d, %d\n", i, j, k);
+          for (int k=0;k<input->max_vals.z+1;k++){
+            for (int j=0;j<input->max_vals.y+1;j++){
+              for (int i=0;i<input->max_vals.x+1;i++){
+                visited[k][j][i] = 0;
+              }
+            }
+          }
           int n_neighbours = has_direct_neighbour(full, empty, input->max_vals);
           if(n_neighbours>0){
             //printf("n_neighbours: %d\n", n_neighbours);
-            if (is_in_pocket(full, empty, input->max_vals)){
+            if (is_in_pocket(full, visited, empty, input->max_vals)){
                 running_sum = running_sum - n_neighbours;
             }
           }
@@ -316,6 +304,7 @@ int solve(grid *input){
 int main(void){
   grid input;
   int answer=-1;
+  freopen("input.txt", "r", stdin);
   read_input(&input);
   print_items(&input);
   answer = solve(&input);

@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS ?= -O2 -Wall -Wextra
 
-TEST_FILE=p1
+TEST_FILE=p2
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
