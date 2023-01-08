@@ -17,20 +17,18 @@ bool valid_pair(char first[BUF_LEN], char second[BUF_LEN]){
     if (first[i]==second[j]){
       if (first[i] == '['){
         first_indent++;
-      }
-      else if(first[i] == ']'){
-        first_indent--;
-      }
-      if (second[j] == '['){
         second_indent++;
-      }
-      else if(second[j] == ']'){
+      } else if (first[i] == ']') {
+        first_indent--;
         second_indent--;
       }
-      i++;
-      j++;
-    }
-    else{
+      if(promote_first==0){
+        i++;
+      }
+      if(promote_second==0){
+        j++;
+      }
+    } else {
       if (first[i]=='\n'){
         return true;
       }
@@ -52,7 +50,9 @@ bool valid_pair(char first[BUF_LEN], char second[BUF_LEN]){
           if(promote_second+second_indent==first_indent && promote_second>0){
             promote_second--;
             i++;
-            j++;
+            if(promote_second==0){
+              j++;
+            }
           }
           else{
             //first finishes early
@@ -60,9 +60,12 @@ bool valid_pair(char first[BUF_LEN], char second[BUF_LEN]){
           }
         }
         else{
+          //if(promote_first+first_indent==second_indent && promote_first>0){
           if(promote_first>0){
             promote_first--;
-            i++;
+            if (promote_first==0){
+              i++;
+            }
             j++;
           }
           else{
@@ -72,9 +75,17 @@ bool valid_pair(char first[BUF_LEN], char second[BUF_LEN]){
         }
       }
       else if(first[i]==','){
+        if (promote_second>0){
+          //second list is longer
+          return false;
+        }
         i++;
       }
       else if(second[j]==','){
+        if (promote_first>0){
+          //first llist is longer
+          return true;
+        }
         j++;
       }
       else{
@@ -91,6 +102,7 @@ bool valid_pair(char first[BUF_LEN], char second[BUF_LEN]){
         }
       }
     }
+    printf("first d: %d, promote: %d\nsecond d: %d, promote: %d\n", first_indent, promote_first, second_indent, promote_second);
   }
 }
 
